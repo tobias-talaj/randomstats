@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Other
+chromedriver
+geckodriver
+geckodriver.log
+learning.ipynb
+stackoverflow/survey_2019/
+stackoverflow/survey_2020/
+stackoverflow/survey_2021/
