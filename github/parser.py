@@ -1,3 +1,6 @@
+from collections import Counter
+import ast
+
 code = '''import re
 
 def dupa():
@@ -25,10 +28,9 @@ foo = '''import re
 import pandas as pd
 aaa = bbb()
 pd.DataFrame(goo).doodle(jjjj()).bar()
+pd.DataFrame(goo).doodle(jjjj()).bar()
 re.sub()
 '''
-
-import ast
 
 class Visitor(ast.NodeVisitor):
     nodes = []
@@ -59,13 +61,15 @@ class Visitor(ast.NodeVisitor):
 
 
 def main():
+    functions = []
     tree = ast.parse(code)
     for node in ast.walk(tree):
         for child in ast.iter_child_nodes(node):
             child.parent = node
     Visitor().visit(tree)
     for n in Visitor.nodes:
-        print('.'.join(n[1][::-1]))
+        functions.append('.'.join(n[1][::-1]))
+    print(Counter(functions))
 
 
 if __name__ == '__main__':
