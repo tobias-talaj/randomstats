@@ -44,47 +44,11 @@ fff = ccc().kkkkkkkkkk
 eee.rrr.jjj(o = yyy.nnn())
 '''
 
-# def parse_function_chain(functions_list):
-#     functions = ''
-#     for fl in functions_list:
-#         functions.append('.'.join(fl[1][::-1]))
-#     return functions
-
 def default_value():
     return []
 
 nodes = []
 objects = defaultdict(default_value)
-
-# class CallVisitor(ast.NodeVisitor):
-
-#     def visit_Call(self, node):
-#         print(node.parent, '<-- parent')
-#         print(node, '<-- node')
-#         name = []
-#         if isinstance(node.parent, ast.Attribute) and not isinstance(node.parent.parent, ast.Call):
-#             name.append(node.parent.attr)
-#             print(node.parent.attr, node.parent._fields, '<-- parent attr')
-#         if isinstance(node.func, ast.Attribute):
-#             temp_name = ''
-#             if isinstance(node.func.value, ast.Name):
-#                 temp_name = f'{node.func.value.id}.'
-#                 print(node.func.value.id, '<-- id')
-#             print(node.func.attr, '<-- attr')
-#             name.append(f'{temp_name}{node.func.attr}')
-#         elif isinstance(node.func, ast.Name):
-#             name.append(node.func.id)
-#             print(node.func.id, '<-- id')
-#         print(ast.unparse(node), '<-- unparse')
-#         for n in nodes:
-#             if node in n[0]:
-#                 n[1] += name
-#                 break
-#         else:
-#             nodes.append([[n for n in list(ast.walk(node)) if not isinstance(n.parent, ast.Call)], name])  # Appending list with children nodes, but without args
-#         print(ast.dump(node, indent=4))
-#         print('\n')
-#         self.generic_visit(node)
 
 def not_argument(node):
     if hasattr(node, 'parent'):
@@ -95,7 +59,8 @@ def not_argument(node):
             not_argument(node.parent)
     return True
 
-class CallVisitor(ast.NodeVisitor):
+
+class CallAttributeVisitor(ast.NodeVisitor):
 
     def visit_Call(self, node):
         print(node.parent, '<-- parent')
@@ -188,47 +153,37 @@ class CallVisitor(ast.NodeVisitor):
 class AssignVisitor(ast.NodeVisitor):
 
     def visit_Assign(self, node):
-        print(node, ast.unparse(node), '<-- assign')
+        print(ast.unparse(node), '<-- assign')
         children = list(ast.iter_child_nodes(node))
-        print(children)
-        if isinstance(children[1], ast.Call):
-            for n in nodes:
-                if children[1] in n[0]:
-                    print(children[0].id, n[1])
-                    objects[children[0].id] = n[1] + objects[children[0].id]
-                    print(objects)
-                    nodes.remove(n)
-                    # objects.append([ast.unparse(children[0]), ast.unparse(children[1])])
-        elif isinstance(children[1], ast.Attribute):
-            for n in nodes:
-                if children[1] in n[0]:
-                    print(children[0].attr, n[1])
-                    objects[children[0].attr] = n[1] + objects[children[0].attr]
-                    print(objects)
-                    nodes.remove(n)
+        print(ast.dump(children[1], indent=4))
+        for n in nodes:
+            if children[1] in n[0] or (children[1].func if 'func' in children[1]._fields else None) in n[0]:
+                if children[0].id in n[1]:
+                    n[1].remove(children[0].id)
+                objects[children[0].id] = n[1] + objects[children[0].id] + [children[0].id]
+                print(children[0].id, n[1], '<-- key and values')
+                nodes.remove(n)
         print('\n')
 
 
 
 def main():
     functions = []
-    tree = ast.parse(foo)
+    tree = ast.parse(bar)
     for node in ast.walk(tree):
         for child in ast.iter_child_nodes(node):
             child.parent = node
-    print(nodes)
 
-    CallVisitor().visit(tree)
+    CallAttributeVisitor().visit(tree)
+    AssignVisitor().visit(tree)
+
+    for k, v in objects.items():
+        functions.append('.'.join(v[::-1]))
+
     for n in nodes:
         functions.append('.'.join(n[1][::-1]))
+
     print(Counter(functions))
-    print(nodes)
-
-    print('\n', '-----------------------------------------', '\n')
-
-    # AssignVisitor().visit(tree)
-    # print(nodes)
-    # print(objects)
 
 
 if __name__ == '__main__':
