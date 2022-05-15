@@ -153,17 +153,44 @@ class CallAttributeVisitor(ast.NodeVisitor):
 class AssignVisitor(ast.NodeVisitor):
 
     def visit_Assign(self, node):
-        print(ast.unparse(node), '<-- assign')
+        object_name = node.targets[0].id
+        print(object_name, '<-- object_name')
         children = list(ast.iter_child_nodes(node))
-        print(ast.dump(children[1], indent=4))
         for n in nodes:
             if children[1] in n[0] or (children[1].func if 'func' in children[1]._fields else None) in n[0]:
-                if children[0].id in n[1]:
-                    n[1].remove(children[0].id)
-                objects[children[0].id] = n[1] + objects[children[0].id] + [children[0].id]
-                print(children[0].id, n[1], '<-- key and values')
+                print(n[1], '<-- initial n[1]')
+                if object_name in n[1]:
+                        n[1].remove(object_name)
+                for a, b in objects.items():
+                    if n[1][-1] == a:
+                        print(b, '<-- b')
+                        n[1] = n[1][:-1] + b
+                        print(n[1], '<-- n[1]')
+                if object_name not in objects:
+                    objects[object_name] = n[1]
+                    print(objects[object_name], '<-- objects 1')
+                else:
+                    print(n[1])
+                    objects[object_name] = n[1] + objects[object_name]
+                    print(objects[object_name], '<-- objects 2')
+                print('\n')
                 nodes.remove(n)
-        print('\n')
+        
+
+
+
+    # def visit_Assign(self, node):
+    #     print(ast.unparse(node), '<-- assign')
+    #     children = list(ast.iter_child_nodes(node))
+    #     print(ast.dump(children[1], indent=4))
+    #     for n in nodes:
+    #         if children[1] in n[0] or (children[1].func if 'func' in children[1]._fields else None) in n[0]:
+    #             if children[0].id in n[1]:
+    #                 n[1].remove(children[0].id)
+    #             objects[children[0].id] = n[1] + objects[children[0].id] + [children[0].id]
+    #             print(children[0].id, n[1], '<-- key and values')
+    #             nodes.remove(n)
+    #     print('\n')
 
 
 
