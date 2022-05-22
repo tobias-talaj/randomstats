@@ -53,8 +53,10 @@ objects = defaultdict(default_value)
 def not_argument(node):
     if hasattr(node, 'parent'):
         if 'args' in node.parent._fields:
-            if node in node.parent.args:
-                return False
+            if isinstance(node, list):
+                return node in node.parent.args
+            else:
+                return node in [node.parent.args]
         else:
             not_argument(node.parent)
     return True
@@ -196,7 +198,7 @@ class AssignVisitor(ast.NodeVisitor):
 
 def main():
     functions = []
-    tree = ast.parse(bar)
+    tree = ast.parse(code)
     for node in ast.walk(tree):
         for child in ast.iter_child_nodes(node):
             child.parent = node
