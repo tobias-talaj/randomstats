@@ -11,7 +11,15 @@ from aaaa import tttt
 def dupa():
     return 'foo'
 
+lll = rrr()
+
+new_lll = lll.zzz()
+
 ppp.func()
+
+qq, ww, ee = q(), w(), [a, v, b]
+
+new_object = SomeClass()
 
 def remove_parentheses_brackets(input_string):
     parens = []
@@ -58,7 +66,7 @@ def parse_functions(d, c):
         if isinstance(d, ast.Attribute):
             return parse_chain(d.value, c, [d.attr]+p)
     if isinstance(d, (ast.Call, ast.Attribute)):
-        c.append('.'.join(parse_chain(d, c)))
+        c.append(['.'.join(parse_chain(d, c)), d])
     else:
         for i in getattr(d, '_fields', []):
             if isinstance(t := getattr(d, i), list):
@@ -86,19 +94,58 @@ def parse_imports(d, c):
                 parse_imports(t, c)
 
 
+def parse_assign(d, c):
+    if isinstance(d, ast.Assign):
+        left = d.targets[0]
+        right = d.value
+        if isinstance(left, ast.Name):
+            assignments.append([left.id, right])
+        elif isinstance(left, ast.Tuple):
+            for le, re in zip(left.elts, right.elts):
+                assignments.append([le.id, re])
+    else:
+        for i in getattr(d, '_fields', []):
+            if isinstance(t := getattr(d, i), list):
+                for i in t:
+                    parse_assign(i, c)
+            else:
+                parse_assign(t, c)
+
+
 functions = []
 imports = []
-imports_functions = []
+assignments = []
+name_mapping = []
 
-parse_imports(ast.parse(code), imports)
-print(imports)
+ast_parsed = ast.parse(code)
+parse_imports(ast_parsed, imports)
+parse_functions(ast_parsed, functions)
+parse_assign(ast_parsed, assignments)
 
-parse_functions(ast.parse(code), functions)
-print(Counter(functions))
+for a in assignments:
+    if isinstance(a[1], (ast.Call, ast.Attribute)):
+        for f in functions:
+            if f[1] == a[1]:
+                name_mapping.append([a[0], f[0]])
+    else:
+        name_mapping.append([a[0], a[1].__class__.__name__])
+
+while set([n[0] for n in name_mapping]) & set([n[1] for n in name_mapping]):
+    for mapping in name_mapping:
+
+
+for index_f, f in enumerate(functions):
+    for n in name_mapping:
+        if n[0] == f[0][:len(n[0])]:
+            functions[index_f][0] = f[0].replace(f[0][:len(n[0])], n[1])
+            print(f[0][:len(n[0])], n[1])
+
+
+print('name_mapping', name_mapping, len(name_mapping), '\n')
 
 for index_f, f in enumerate(functions):
     for i in imports:
-        if i[2] == f[:len(i[2])]:
-            functions[index_f] = f.replace(f[:len(i[2])], '.'.join(i[:2]) if i[0] else i[1])
+        if i[2] == f[0][:len(i[2])]:
+            functions[index_f][0] = f[0].replace(f[0][:len(i[2])], '.'.join(i[:2]) if i[0] else i[1])
 
-print(Counter(functions))
+print(Counter([f[0] for f in functions]))
